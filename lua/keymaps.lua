@@ -20,9 +20,12 @@ map('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic mes
 map('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
 map('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open Floating Diagnostic Message' })
 map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open Diagnostics List' })
--- Move text up and down
-map('v', 'k', ':move \'>+1<cr>gv-gv', { noremap = true, silent = true, desc = 'Move text Down' })
-map('v', 'j', ':move \'<-2<cr>gv-gv', { noremap = true, silent = true, desc = 'Move text Up' })
+-- Move text up and down NORMAL
+map('n', '<a-k>', '<esc><cmd>move .-2<cr>==', { noremap = true, silent = true, desc = 'Move text Up' })
+map('n', '<a-j>', '<esc><cmd>move .+1<cr>==', { noremap = true, silent = true, desc = 'Move text Down' })
+-- Move text up and down VISUAL
+map({ 'v', 'x' }, '<a-k>', ':move "<-2<cr>gv-gv', { noremap = true, silent = true, desc = 'Move text Up' })
+map({ 'v', 'x' }, '<a-j>', ':move ">+1<cr>gv-gv', { noremap = true, silent = true, desc = 'Move text Down' })
 -- Naviagate buffers
 map('n', '<a-left>', '<cmd>bnext<cr>', { noremap = true, silent = true, desc = 'Navigate next buffer' })
 map('n', '<a-right>', '<cmd>bprevious<cr>', { noremap = true, silent = true, desc = 'Navigate previous buffer' })
