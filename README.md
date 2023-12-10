@@ -1,2 +1,2 @@
-# neovim_setup
+# Neovim Config 💾
 Basic initial Neovim configuration.
