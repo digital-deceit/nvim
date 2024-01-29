@@ -51,8 +51,10 @@ return {
         go = { 'gofmt', 'gofumpt', 'golines', 'goimports-reviser' },
         c = { 'clang-format' },
         rust = { 'rustfmt' },
-        typescript = { { 'biome', 'prettierd' } },
-        javascript = { { 'biome', 'prettierd' } },
+        typescript = { { 'biome', 'prettierd', 'deno_fmt' } },
+        javascript = { { 'biome', 'prettierd', 'deno_fmt' } },
+        json = { { 'biome', 'prettierd', 'deno_fmt' } },
+        bash = { 'beautysh' },
       },
 
       -- Define a command to run async formatting
