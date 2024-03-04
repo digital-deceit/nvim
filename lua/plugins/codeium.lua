@@ -3,7 +3,7 @@ return {
   name = 'Codeium',
   dependencies = {
     'nvim-lua/plenary.nvim',
-    'hrsh7th/nvim-cmp',
+    name = 'Plenary'
   },
   config = function()
     vim.keymap.set('i', '<c-g>', function()

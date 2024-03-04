@@ -5,155 +5,116 @@ return {
   dependencies = {
     { 'williamboman/mason.nvim', name = 'Mason' },
     { 'williamboman/mason-lspconfig.nvim', name = 'Mason-LSPConfig' },
-
     { 'j-hui/fidget.nvim', name = 'Fidget', opts = {} },
-
-    { 'folke/neodev.nvim', name = 'Neodev' },
-
     { 'sigmasd/deno-nvim', name = 'Deno' },
-
     { 'pmizio/typescript-tools.nvim', name = 'Typescript-Tools' },
+    { 'WhoIsSethDaniel/mason-tool-installer.nvim', name = 'Mason Tool Installer' },
   },
   config = function()
-    -- [[ Configure LSP ]]
-    --  This function gets run when an LSP connects to a particular buffer.
-    local on_attach = function(_, bufnr)
-      -- NOTE: Remember that lua is a real programming language, and as such it is possible
-      -- to define small helper and utility functions so you don't have to repeat yourself
-      -- many times.
-      --
-      -- In this case, we create a function that lets us more easily define mappings specific
-      -- for LSP related items. It sets the mode, buffer and description for us each time.
-      local nmap = function(keys, func, desc)
-        if desc then
-          desc = 'LSP: ' .. desc
+    require('lspconfig.ui.windows').default_options.border = 'single'
+
+    vim.api.nvim_create_autocmd('LspAttach', {
+      group = vim.api.nvim_create_augroup('LspConfig', { clear = true }),
+      callback = function(event)
+        local map = function(keys, func, desc)
+          vim.keymap.set('n', keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
         end
 
-        vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
-      end
+        map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
+        map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+        map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+        map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+        map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
+        map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
+        map('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
+        map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
+        map('K', vim.lsp.buf.hover, 'Hover Documentation')
+        map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
 
-      nmap('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
-      nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+        local client = vim.lsp.get_client_by_id(event.data.client_id)
+        if client and client.server_capabilities.documentHighlightProvider then
+          vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+            buffer = event.buf,
+            callback = vim.lsp.buf.document_highlight,
+          })
 
-      nmap('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-      nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-      nmap('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-      nmap('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
-      nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
-      nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
-
-      -- See `:help K` for why this keymap
-      nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-      nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
-
-      -- Lesser used LSP functionality
-      nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-      nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
-      nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
-      nmap('<leader>wl', function()
-        print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-      end, '[W]orkspace [L]ist Folders')
-
-      -- Create a command `:Format` local to the LSP buffer
-      vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
-        vim.lsp.buf.format()
-      end, { desc = 'Format current buffer with LSP' })
-    end
-
-    -- document existing key chains
-    require('which-key').register({
-      ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-      ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-      ['<leader>g'] = { name = '[G]it', _ = 'which_key_ignore' },
-      ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
-      ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-      ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-      ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
-      ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
+          vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+            buffer = event.buf,
+            callback = vim.lsp.buf.clear_references,
+          })
+        end
+      end,
     })
 
-    -- register which-key VISUAL mode
-    -- required for visual <leader>hs (hunk stage) to work
-    require('which-key').register({
-      ['<leader>'] = { name = 'VISUAL <leader>' },
-      ['<leader>h'] = { 'Git [H]unk' },
-    }, { mode = 'v' })
+    local capabilities = vim.lsp.protocol.make_client_capabilities()
+    capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
-    require('mason').setup()
-    require('mason-lspconfig').setup()
-
-    -- Enable the following language servers
-    --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
-    --
-    --  Add any additional override configuration in the following tables. They will be passed to
-    --  the `settings` field of the server config. You must look up that documentation yourself.
-    --
-    --  If you want to override the default filetypes that your language server will attach to you can
-    --  define the property 'filetypes' to the map in question.
     local servers = {
       lua_ls = {
         settings = {
           Lua = {
-            workspace = { checkThirdParty = false },
-            telemetry = { enable = false },
-            -- NOTE: toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+            runtime = { version = 'LuaJIT' },
+            workspace = {
+              checkThirdParty = false,
+              library = {
+                '${3rd}/luv/library',
+                unpack(vim.api.nvim_get_runtime_file('', true)),
+              },
+            },
             diagnostics = { disable = { 'missing-fields' } },
           },
         },
       },
     }
 
-    -- Setup neovim lua configuration
-    require('neodev').setup({})
+    require('mason').setup()
 
-    -- nvim-cmp supports additional completion capabilities, so broadcast that to servers
-    local capabilities = vim.lsp.protocol.make_client_capabilities()
-    capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
+    local ensure_installed = vim.tbl_keys(servers or {})
+    vim.list_extend(ensure_installed, {
+      'stylua', -- Used to format lua code
+      'biome',
+      'eslint',
+      'bashls',
+      'tsserver',
+      'prettierd',
+      'shellcheck',
+      'luacheck',
+    })
+    require('mason-tool-installer').setup({ ensure_installed = ensure_installed })
 
-    -- Ensure the servers above are installed
-    local mason_lspconfig = require('mason-lspconfig')
-
-    mason_lspconfig.setup({
-      ensure_installed = vim.tbl_keys(servers),
+    require('mason-lspconfig').setup({
+      handlers = {
+        function(server_name)
+          local server = servers[server_name] or {}
+          require('lspconfig')[server_name].setup({
+            cmd = server.cmd,
+            settings = server.settings,
+            filetypes = server.filetypes,
+            capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {}),
+            autostart = server.autostart,
+          })
+        end,
+        ['biome'] = function()
+          require('lspconfig').biome.setup({
+            root_dir = require('lspconfig').util.root_pattern('biome.json'),
+            single_file_support = false,
+          })
+        end,
+        ['tsserver'] = function ()
+          require('lspconfig').tsserver.setup({
+            autostart = false,
+          })
+        end,
+        ['eslint'] = function ()
+          require('lspconfig').eslint.setup({
+            root_dir = require('lspconfig').util.root_pattern('.eslintrc.js', '.eslintrc.cjs', '.eslintrc.json'),
+          })
+        end
+      },
     })
 
-    mason_lspconfig.setup_handlers({
-      function(server_name)
-        require('lspconfig')[server_name].setup({
-          capabilities = capabilities,
-          on_attach = on_attach,
-          settings = servers[server_name],
-          filetypes = (servers[server_name] or {}).filetypes,
-        })
-      end,
-      ['tsserver'] = function()
-        require('lspconfig').tsserver.setup({
-          autostart = false,
-        })
-      end,
-      ['biome'] = function()
-        require('lspconfig').biome.setup({
-          root_dir = require('lspconfig').util.root_pattern('biome.json'),
-          single_file_support = false,
-        })
-      end,
-      ['eslint'] = function()
-        require('lspconfig').eslint.setup({
-          root_dir = require('lspconfig').util.root_pattern({
-            '.eslintrc',
-            '.eslintrc.js',
-            '.eslintrc.cjs',
-            '.eslintrc.yaml',
-            '.eslintrc.yml',
-            '.eslintrc.json',
-            'eslint.config.js',
-          }),
-        })
-      end,
-    })
-
+    -- [[ Rust Analyzer config ]]
     require('lspconfig').rust_analyzer.setup({
-      on_attach = on_attach,
       capabilities = capabilities,
     })
 
@@ -161,16 +122,14 @@ return {
     local ts_tools = require('typescript-tools')
     ts_tools.setup({
       cmd = { 'typescript-language-server', '--stdio' },
-      on_attach = on_attach,
       capabilities = capabilities,
-      root_dir = require('lspconfig').util.root_pattern('package.json'),
+      root_dir = require('lspconfig').util.root_pattern('package.json', 'tsconfig.json'),
       single_file_support = false,
     })
 
     -- [[ Deno plugin config ]]
     require('deno-nvim').setup({
       server = {
-        on_attach = on_attach,
         capabilities = capabilities,
         root_dir = require('lspconfig').util.root_pattern('deno.json', 'deno.jsonc'),
         settings = {

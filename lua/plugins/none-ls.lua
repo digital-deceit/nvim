@@ -12,6 +12,7 @@ return {
         null.builtins.diagnostics.luacheck.with({
           extra_args = { '--globals', 'vim' },
         }),
+        null.builtins.diagnostics.cppcheck,
       },
     })
   end,

@@ -1,4 +1,4 @@
-local set = vim.o
+local set = vim.opt
 local setg = vim.g
 local setw = vim.wo
 
@@ -18,7 +18,14 @@ set.timeout = true
 set.timeoutlen = 300
 set.completeopt = 'menuone,noselect'
 setg.autoread = true
-set.noswapfile = true
+set.showmode = false
+set.inccommand = 'split'
+set.splitright = true
+set.splitbelow = true
+set.hlsearch = true
+set.cursorline = true
+set.list = true
+set.listchars:append({ eol = '↵', tab = '▎ ', trail = '·', nbsp = '␣' })
 set.clipboard = 'unnamedplus'
 setg.clipboard = {
   name = 'WslClipboard',

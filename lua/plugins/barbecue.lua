@@ -4,6 +4,7 @@ return {
   version = '*',
   dependencies = {
     'SmiteshP/nvim-navic',
+    name = 'Navic',
   },
   opts = {
     vim.api.nvim_create_autocmd({
@@ -24,4 +25,5 @@ return {
     create_autocmd = false,
     attach_navic = false,
   },
+  theme = 'tokyonight',
 }
